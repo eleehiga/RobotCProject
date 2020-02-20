@@ -6,9 +6,9 @@
 float wheelCircumfrence = 17.75; // cm
 float forwardDistance = 100;
 
-float errorArray[3] = [0,0,0];
-float powerBefore = 0;
-float samplingTime = 0.01; // TODO Get this value
+float errorArray[3] = {0,0,0};
+float powerArray[2] = {0,0};
+float samplingTime = 0.1; // TODO Get this value
 
 float absVal(float n)
 {
@@ -20,7 +20,7 @@ float absVal(float n)
 }
 
 float controllerFP(float error,float kF,float kP)
-{
+{ // kF=10 and kP=1
 	return error * kP + kF * error/absVal(error); //kF is applied in the unit vector direction of the error
 }
 
@@ -33,8 +33,9 @@ float controllerPID(float error, float kP, float kI, float kD)
 	errorArray[0] = errorArray[1]; // Errors get shifted to lower indexes
 	errorArray[1] = errorArray [2];
 	errorArray[2] = error; // Newest Error in index two
-	power = powerBefore + a * errorArray[2] + b * errorArray[1] + c * errorArray[0];
-	powerBefore = power;
+	powerArray[1] = powerArray[0] + a * errorArray[2] + b * errorArray[1] + c * errorArray[0];
+	power = powerArray[1];
+	powerArray[0] = powerArray[1];
 	return power;
 }
 
