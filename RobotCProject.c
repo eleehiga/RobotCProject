@@ -6,6 +6,10 @@
 float wheelCircumfrence = 17.75; // cm
 float forwardDistance = 100;
 
+float errorArray[3] = [0,0,0];
+float powerBefore = 0;
+float samplingTime = 0.01; // TODO Get this value
+
 float absVal(float n)
 {
 	if(n < 0)
@@ -15,16 +19,32 @@ float absVal(float n)
 	return n;
 }
 
-float controllerFPID(float error,float kF,float kP)
+float controllerFP(float error,float kF,float kP)
 {
 	return error * kP + kF * error/absVal(error); //kF is applied in the unit vector direction of the error
+}
+
+float controllerPID(float error, float kP, float kI, float kD)
+{
+	float power = 0;
+	float a = kP + kI * samplingTime / 2 + kD / samplingTime;
+	float b = -kP + kI * samplingTime / 2 - 2 * kD / samplingTime;
+	float c = kD / samplingTime;
+	errorArray[0] = errorArray[1]; // Errors get shifted to lower indexes
+	errorArray[1] = errorArray [2];
+	errorArray[2] = error; // Newest Error in index two
+	power = powerBefore + a * errorArray[2] + b * errorArray[1] + c * errorArray[0];
+	powerBefore = power;
+	return power;
 }
 
 void turnLeft()
 {
 	resetGyro(gyroSensor);
-	float kF = 10;
+	float kF = 10; // TODO tune all of these
 	float kP = 1;
+	float kI = 0;
+	float kD = 0;
 	float threshold = 1;
 	float error = 0;
 	float powers = 0; //Max can be 100
@@ -32,7 +52,7 @@ void turnLeft()
 	while(absVal(getGyroHeading(gyroSensor)-(endAngle))>threshold)
 	{
 		error = getGyroHeading(gyroSensor)-(endAngle);
-		powers = controllerFPID(error, kF, kP);
+		powers = controllerPID(error, kP, kI, kD);
 		if(absVal(powers) > 100) // scale the power to be in the range of a 100 to -100
 		{
 			powers = 100*powers/abs(powers);
